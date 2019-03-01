@@ -52,7 +52,7 @@ class TextDrawer:
     """
     # 灰度-字符 正相关 0~1
     __MAP = CharMap(
-        ' .\'`^",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$'
+        '$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,"^`\'. '
     )
     # 宽高比的倒数, 修复因字体原因引起的变形
     __WH = 1.0

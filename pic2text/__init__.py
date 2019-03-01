@@ -32,7 +32,7 @@ def _get_parser():
         required=False, default=1.0, type=float
     )
     parser.add_argument(
-        "--map", dest="map_", metavar="0123456789", help="从小到大的灰度值到字符的映射",
+        "--map", dest="map_", metavar="0123456789", help="从黑到白的灰度值到字符的映射",
     )
     return parser
 
