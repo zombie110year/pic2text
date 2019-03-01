@@ -8,7 +8,7 @@ EMAIL = "zombie110year@outlook.com"
 URL = "https://github.com/zombie110year/"
 
 # * 版本号
-VERSION = "0.0.0"
+VERSION = "1.0.0"
 
 # * 短描述
 DESCRIPTION = "将图片转换为字符串"
@@ -37,7 +37,7 @@ PLATFORMS = [
 
 ENTRY = {
     'console_scripts': [
-        "pic2text = pic2text.main"
+        "pic2text = pic2text:main"
     ],
 }
 
@@ -54,7 +54,7 @@ setup(
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     url=URL,
-    packages=[''],
+    packages=['pic2text'],
     classifiers=CLASSIFIERS,
     keywords=KEYWORDS,
     platforms=PLATFORMS,
