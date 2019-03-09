@@ -2,6 +2,8 @@ from copy import deepcopy
 
 from PIL import Image
 
+from .color import Colorizer
+
 
 class CharMap(tuple):
     """根据传入的索引值与 256 的相对大小查找元素的列表
@@ -153,6 +155,13 @@ class TextDrawer:
 
         return text_buffer
 
+    def image_to_color_array(self, im: Image.Image):
+        color_buffer = [
+            [
+                '' for i in range(im.width)
+            ] for j in range(im.height)
+        ]
+
     def _get_text(self, buffer: list):
         """将字符二维数组转化为字符串
         """
@@ -162,7 +171,7 @@ class TextDrawer:
 
         return text
 
-    def draw(self, path):
+    def draw(self, path, colorful=False):
         """将路径下的图片转为字符串返回
 
         :param str path: 指向图片文件的路径
@@ -176,7 +185,12 @@ class TextDrawer:
         self.__height = height
         thumbnail = image.resize((self.width, height), Image.NEAREST)
 
-        buffer = self.image_to_text_array(thumbnail)
+        text_buffer = self.image_to_text_array(thumbnail)
+
+        if colorful:
+            pass
+        else:
+            buffer = text_buffer
 
         self.__cache = deepcopy(buffer)
 

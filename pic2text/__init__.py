@@ -2,7 +2,7 @@ from argparse import Action, ArgumentParser, SUPPRESS
 from pathlib import Path
 from sys import exit
 
-from .maker import TextDrawer
+from .picture import TextDrawer
 
 
 class SetFilePathAction(Action):

@@ -77,6 +77,11 @@ class Colorizer:
             code=";".join(map(lambda x: str(x), colors)), content=string
         )
 
+        def rgb_to_shell_color(self, r, g, b):
+            """将 rgb 颜色转换成 Shell 颜色
+            """
+            pass
+
 
 def test_color_looking():
     """在终端打印所有的色彩序列组合, 观察效果
