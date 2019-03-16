@@ -178,7 +178,7 @@ class TextDrawer:
         """将路径下的图片转为字符串返回
 
         :param str path: 指向图片文件的路径
-        :param float gamma: 伽马矫正值 0~1: 暗, 1~infty 亮
+        :param float gamma: 伽马矫正值 0~1: 亮, 1~infty 暗
         :return: 由图像转化而来的字符串
         """
         image = Image.open(path)
