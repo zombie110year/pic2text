@@ -4,12 +4,13 @@ from PIL import Image
 
 
 class CharMap(tuple):
-    """根据传入的索引值与 256 的相对大小查找元素的列表
+    """根据传入的 gamma 值查找元素.
+    gamma: 0~1
     """
 
-    def __getitem__(self, index):
-        return super().__getitem__(
-            (len(self) * index) >> 8
+    def __getitem__(self, gamma):
+        return super(CharMap, self).__getitem__(
+            int((len(self) * gamma))
         )
 
 
@@ -118,16 +119,17 @@ class TextDrawer:
         else:
             return (r*38 + g*75 + b*15) >> 7
 
-    def get_char(self, grey: int) -> str:
+    def get_char(self, grey: int, gamma: float) -> str:
         """根据灰度值获取对应的字符
 
         字符映射表为 :data:`self.__MAP`
 
         :param int grey: [0, 255]
+        :param float gamma: gamma 矫正的幂数
         """
-        return self.__MAP[grey]
+        return self.__MAP[(grey / 256)**gamma]
 
-    def image_to_text_array(self, im: Image.Image) -> list:
+    def image_to_text_array(self, im: Image.Image, gamma) -> list:
         """将彩色图片 ``im`` 转化为被字符填充的二维数组::
 
             [
@@ -139,6 +141,7 @@ class TextDrawer:
 
         :param im: 彩色图片
         :type im: PIL.Image.Image
+        :param float gamma: 伽马矫正值
         :return: list(list(str()))
         """
         text_buffer = [
@@ -149,7 +152,7 @@ class TextDrawer:
         for height in range(im.height):
             for width in range(im.width):
                 grey = self.rgb_to_grey(*im.getpixel((width, height)))
-                text_buffer[height][width] = self.get_char(grey)
+                text_buffer[height][width] = self.get_char(grey, gamma)
 
         return text_buffer
 
@@ -162,10 +165,11 @@ class TextDrawer:
 
         return text
 
-    def draw(self, path):
+    def draw(self, path, gamma):
         """将路径下的图片转为字符串返回
 
         :param str path: 指向图片文件的路径
+        :param float gamma: 伽马矫正值 0~1: 暗, 1~infty 亮
         :return: 由图像转化而来的字符串
         """
         image = Image.open(path)
@@ -176,7 +180,7 @@ class TextDrawer:
         self.__height = height
         thumbnail = image.resize((self.width, height), Image.NEAREST)
 
-        buffer = self.image_to_text_array(thumbnail)
+        buffer = self.image_to_text_array(thumbnail, gamma)
 
         self.__cache = deepcopy(buffer)
 
