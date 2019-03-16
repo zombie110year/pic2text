@@ -2,6 +2,8 @@ from copy import deepcopy
 
 from PIL import Image
 
+from .color import Colorizer
+
 
 class CharMap(tuple):
     """根据传入的 gamma 值查找元素.
@@ -53,7 +55,7 @@ class TextDrawer:
     """
     # 灰度-字符 正相关 0~1
     __MAP = CharMap(
-        '$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,"^`\'. '
+        '@#$%WMHGOBKwmghokb:|"^\'+~-__,.. '
     )
     # 宽高比的倒数, 修复因字体原因引起的变形
     __WH = 1.0
@@ -155,6 +157,13 @@ class TextDrawer:
                 text_buffer[height][width] = self.get_char(grey, gamma)
 
         return text_buffer
+
+    def image_to_color_array(self, im: Image.Image):
+        color_buffer = [
+            [
+                '' for i in range(im.width)
+            ] for j in range(im.height)
+        ]
 
     def _get_text(self, buffer: list):
         """将字符二维数组转化为字符串
