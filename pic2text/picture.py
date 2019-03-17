@@ -1,5 +1,6 @@
 from copy import deepcopy
 
+import numpy as np
 from PIL import Image
 
 from .color import Colorizer
@@ -11,8 +12,12 @@ class CharMap(tuple):
     """
 
     def __getitem__(self, gamma):
+        length = len(self)
+        index = int(length * gamma)
+        if index == length:
+            index -= 1
         return super(CharMap, self).__getitem__(
-            int((len(self) * gamma))
+            index
         )
 
 
@@ -107,29 +112,38 @@ class TextDrawer:
         if 'width' in kwargs:
             self.__WIDTH = kwargs.get("width", 120)
 
-    def rgb_to_grey(self, r: int, g: int, b: int, alpha=255) -> int:
+    def rgb_to_grey(self, im: Image.Image) -> int:
         """将像素 RGB 转化为灰度值
 
         传入值的范围在 [0, 255] 之间
 
-        :param int alpha: alpha 通道值, 默认为 255
+        :param im: PIL 读取的图像
         :return: 灰度值, 范围在 [0, 255] 之间
-        :rtype: :class:`int`
+        :rtype: np.ndarray(shape=(im.height, im.width)) grey_array
         """
-        if alpha == 0:
-            return 0
-        else:
-            return (r*38 + g*75 + b*15) >> 7
+        # shape=(height, width, rgba)
+        buffer = np.array(im, dtype=np.uint64)
+        result = np.ndarray(shape=(im.height, im.width), dtype=np.uint64)
+        result = (buffer[:, :, 0] * 38 + buffer[:, :, 1] * 75 + buffer[:, :, 2] * 15) >> 7
+        return result
 
-    def get_char(self, grey: int, gamma: float) -> str:
+    def get_char(self, grey: np.ndarray, gamma: float, max_: int) -> str:
         """根据灰度值获取对应的字符
 
         字符映射表为 :data:`self.__MAP`
 
         :param int grey: [0, 255]
         :param float gamma: gamma 矫正的幂数
+        :param float max_: 最大的灰度值
         """
-        return self.__MAP[(grey / 256)**gamma]
+        buffer = np.ndarray(shape=grey.shape, dtype=np.float64)
+        buffer = (grey / max_)**gamma
+        result = np.ndarray(shape=grey.shape, dtype=np.uint8)
+        for y in range(grey.shape[0]):
+            for x in range(grey.shape[1]):
+                result[y, x] = ord(self.__MAP[buffer[y, x]])
+
+        return result
 
     def image_to_text_array(self, im: Image.Image, gamma) -> list:
         """将彩色图片 ``im`` 转化为被字符填充的二维数组::
@@ -146,15 +160,10 @@ class TextDrawer:
         :param float gamma: 伽马矫正值
         :return: list(list(str()))
         """
-        text_buffer = [
-            [
-                ' ' for i in range(im.width)
-            ] for j in range(im.height)
-        ]
-        for height in range(im.height):
-            for width in range(im.width):
-                grey = self.rgb_to_grey(*im.getpixel((width, height)))
-                text_buffer[height][width] = self.get_char(grey, gamma)
+        text_buffer = np.ndarray(shape=(im.height, im.width), dtype=np.uint8)
+        buffer = self.rgb_to_grey(im)
+
+        text_buffer = self.get_char(buffer, gamma, np.max(buffer))
 
         return text_buffer
 
@@ -165,11 +174,11 @@ class TextDrawer:
             ] for j in range(im.height)
         ]
 
-    def _get_text(self, buffer: list):
-        """将字符二维数组转化为字符串
+    def _get_text(self, buffer: np.ndarray):
+        """将 uint8 二维数组转化为字符串
         """
-        text = "\n".join([
-            ''.join(buffer[i]) for i in range(self.__height)
+        text = '\n'.join([
+            ''.join([chr(item) for item in buffer[i]]) for i in range(buffer.shape[0])
         ])
 
         return text
