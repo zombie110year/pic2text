@@ -9,7 +9,7 @@ EMAIL = "zombie110year@outlook.com"
 URL = "https://github.com/zombie110year/"
 
 # * 版本号
-VERSION = "1.0.1"
+VERSION = "1.1.1"
 
 # * 短描述
 DESCRIPTION = "将图片转换为字符串"
