@@ -34,6 +34,10 @@ def _get_parser():
     parser.add_argument(
         "--map", dest="map_", metavar="0123456789", help="从黑到白的灰度值到字符的映射",
     )
+    parser.add_argument(
+        "--gamma", metavar="1.0", help="Gamma 矫正", type=float,
+        default=1.0
+    )
     return parser
 
 
@@ -46,7 +50,7 @@ def main():
     args = _get_parser().parse_args()
     path = args.path
     drawer = TextDrawer(**args.__dict__)
-    drawer.draw(path)
+    drawer.draw(path, args.gamma)
     if args.output:
         drawer.save(args.output)
     else:

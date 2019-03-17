@@ -1,17 +1,23 @@
 from copy import deepcopy
 
+import numpy as np
 from PIL import Image
 
 from .color import Colorizer
 
 
 class CharMap(tuple):
-    """根据传入的索引值与 256 的相对大小查找元素的列表
+    """根据传入的 gamma 值查找元素.
+    gamma: 0~1
     """
 
-    def __getitem__(self, index):
-        return super().__getitem__(
-            (len(self) * index) >> 8
+    def __getitem__(self, gamma):
+        length = len(self)
+        index = int(length * gamma)
+        if index == length:
+            index -= 1
+        return super(CharMap, self).__getitem__(
+            index
         )
 
 
@@ -106,30 +112,40 @@ class TextDrawer:
         if 'width' in kwargs:
             self.__WIDTH = kwargs.get("width", 120)
 
-    def rgb_to_grey(self, r: int, g: int, b: int, alpha=255) -> int:
+    def rgb_to_grey(self, im: Image.Image) -> int:
         """将像素 RGB 转化为灰度值
 
         传入值的范围在 [0, 255] 之间
 
-        :param int alpha: alpha 通道值, 默认为 255
+        :param im: PIL 读取的图像
         :return: 灰度值, 范围在 [0, 255] 之间
-        :rtype: :class:`int`
+        :rtype: np.ndarray(shape=(im.height, im.width)) grey_array
         """
-        if alpha == 0:
-            return 0
-        else:
-            return (r*38 + g*75 + b*15) >> 7
+        # shape=(height, width, rgba)
+        buffer = np.array(im, dtype=np.uint64)
+        result = np.ndarray(shape=(im.height, im.width), dtype=np.uint64)
+        result = (buffer[:, :, 0] * 38 + buffer[:, :, 1] * 75 + buffer[:, :, 2] * 15) >> 7
+        return result
 
-    def get_char(self, grey: int) -> str:
+    def get_char(self, grey: np.ndarray, gamma: float, max_: int) -> str:
         """根据灰度值获取对应的字符
 
         字符映射表为 :data:`self.__MAP`
 
         :param int grey: [0, 255]
+        :param float gamma: gamma 矫正的幂数
+        :param float max_: 最大的灰度值
         """
-        return self.__MAP[grey]
+        buffer = np.ndarray(shape=grey.shape, dtype=np.float64)
+        buffer = (grey / max_)**gamma
+        result = np.ndarray(shape=grey.shape, dtype=np.uint8)
+        for y in range(grey.shape[0]):
+            for x in range(grey.shape[1]):
+                result[y, x] = ord(self.__MAP[buffer[y, x]])
 
-    def image_to_text_array(self, im: Image.Image) -> list:
+        return result
+
+    def image_to_text_array(self, im: Image.Image, gamma) -> list:
         """将彩色图片 ``im`` 转化为被字符填充的二维数组::
 
             [
@@ -141,17 +157,13 @@ class TextDrawer:
 
         :param im: 彩色图片
         :type im: PIL.Image.Image
+        :param float gamma: 伽马矫正值
         :return: list(list(str()))
         """
-        text_buffer = [
-            [
-                ' ' for i in range(im.width)
-            ] for j in range(im.height)
-        ]
-        for height in range(im.height):
-            for width in range(im.width):
-                grey = self.rgb_to_grey(*im.getpixel((width, height)))
-                text_buffer[height][width] = self.get_char(grey)
+        text_buffer = np.ndarray(shape=(im.height, im.width), dtype=np.uint8)
+        buffer = self.rgb_to_grey(im)
+
+        text_buffer = self.get_char(buffer, gamma, np.max(buffer))
 
         return text_buffer
 
@@ -162,19 +174,20 @@ class TextDrawer:
             ] for j in range(im.height)
         ]
 
-    def _get_text(self, buffer: list):
-        """将字符二维数组转化为字符串
+    def _get_text(self, buffer: np.ndarray):
+        """将 uint8 二维数组转化为字符串
         """
-        text = "\n".join([
-            ''.join(buffer[i]) for i in range(self.__height)
+        text = '\n'.join([
+            ''.join([chr(item) for item in buffer[i]]) for i in range(buffer.shape[0])
         ])
 
         return text
 
-    def draw(self, path, colorful=False):
+    def draw(self, path, gamma):
         """将路径下的图片转为字符串返回
 
         :param str path: 指向图片文件的路径
+        :param float gamma: 伽马矫正值 0~1: 亮, 1~infty 暗
         :return: 由图像转化而来的字符串
         """
         image = Image.open(path)
@@ -185,12 +198,7 @@ class TextDrawer:
         self.__height = height
         thumbnail = image.resize((self.width, height), Image.NEAREST)
 
-        text_buffer = self.image_to_text_array(thumbnail)
-
-        if colorful:
-            pass
-        else:
-            buffer = text_buffer
+        buffer = self.image_to_text_array(thumbnail, gamma)
 
         self.__cache = deepcopy(buffer)
 
